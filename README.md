@@ -34,6 +34,40 @@ The engine does not depend on this module and runs without it.
 GM only. In the Items sidebar, **Create (Homebrew)**. To edit a creation later, open its sheet (in the compendium or on
 an actor) and use **Automation (Homebrew)** in the window header.
 
+## Automation packs
+
+An automation pack is a `.json` file that holds **rules only**, keyed by dnd5e item identifier: no text, no image, no
+item sheet. It automates items your world already has — from the SRD, from a module you own, or imported by another
+tool — without shipping any of their content. DAS · Homebrew ships **no pack**: it only provides the tool.
+
+GM only. **Packs (Homebrew)** in the Items sidebar, or the **Workshop** tab of the DAS settings window:
+
+- **Import a pack** (button, or drop the file into the window): the engine checks every rule first, and you see a summary
+  before accepting — id, title, version, authors, number of rules, targeted identifiers, required modules present or
+  missing, identifiers already automated elsewhere, errors. A pack with any invalid rule is refused.
+- Each imported pack can be **enabled or disabled**, **updated** (import a newer version: your on/off choice is kept),
+  **exported** again, or **removed**. A pack whose required module is missing, or written for another version of the
+  engine's schema, stays inactive and the GM is told why.
+- **Export my creations** turns some of your creations into a pack (optionally with their items), to import in another
+  world. Do not share items created from another module's item: they keep its text and image.
+
+Priority, last wins key by key: engine content < packs (alphabetical by id) < your creations < the GM's world overlay.
+
+```jsonc
+{
+  "format": "das-pack", "formatVersion": 1,
+  "id": "my-pack", "title": "My pack", "version": "1.0.0", "authors": ["Me"], "license": "MIT",
+  "contentVersion": 1,                                   // the engine's content schema version (api.content.version)
+  "requires": { "dnd5e-combat": ">=0.267.0", "modules": [] },  // modules whose items the pack automates
+  "sources": { "<16-character document id>": "my-strike" },  // items without a usable identifier
+  "rules": { "my-strike": { /* an entry of the engine's content schema */ } }
+}
+```
+
+`rules` is exactly what the engine's `api.content.register(source, table)` accepts. `sources` maps the id of an item
+(its compendium source, or the item itself) to the identifier its rule is filed under, for items whose identifier
+dnd5e derived from their (possibly translated) name.
+
 ## Installation
 
 In Foundry (or on The Forge), *Install Module* → paste the manifest URL:
@@ -46,8 +80,7 @@ From source: the Foundry module is the `module/` subfolder, to copy or link into
 Tests: `npm install` then `npm test` (they read the engine's catalogue from a `dnd5e-combat` clone, set `DAS_CORE` to its
 path). In-game scenario: `tools/scenarios/`, played with the engine's scenario runner.
 
-Early development. Planned next: automation packs (installable rule sets, including ones that automate premium content
-by identifier without shipping any of it).
+Early development. Planned next: exporting a pack as a ready-to-publish module (`.zip`).
 
 ## Translations
 

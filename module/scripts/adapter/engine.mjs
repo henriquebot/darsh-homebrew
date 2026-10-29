@@ -39,9 +39,50 @@ export function takenElsewhere(identifier, source) {
     || !(api.registered?.()[source] ?? []).includes(identifier);
 }
 
-/** Enregistre (ou remplace) la table de l'atelier auprès du moteur, sur ce client. */
-export function register(source, table) {
-  return content()?.register(source, table) ?? null;
+/** Enregistre (ou remplace) une table auprès du moteur, sur ce client ; `options.sources` : moteur ≥ §277. */
+export function register(source, table, options) {
+  return content()?.register(source, table, options) ?? null;
+}
+
+/** Retire une table (et ses sources) du moteur, sur ce client. */
+export function unregister(source) {
+  return content()?.unregister?.(source) ?? false;
+}
+
+/** Les sources enregistrées auprès du moteur, par table. */
+export function registered() {
+  return content()?.registered?.() ?? {};
+}
+
+/** De quoi lire un pack : la validation d'une entrée, et celle d'une table de sources quand le moteur l'a (§277). */
+export function validators() {
+  const api = content();
+  return { validate, ...(typeof api?.validateSources === "function" ? { validateSources: api.validateSources } : {}) };
+}
+
+/**
+ * Ce qui décide si un pack agit dans ce monde : version du moteur et de son schéma, modules actifs, sources enregistrables.
+ * @returns {{engineVersion: string, contentVersion: number, isModuleActive: (id: string) => boolean, sourcesSupported: boolean}}
+ */
+export function environment() {
+  const api = content();
+  return {
+    engineVersion: game.modules.get(ENGINE_ID)?.version ?? "0.0.0",
+    contentVersion: api?.version ?? 0,
+    isModuleActive: id => !!game.modules.get(id)?.active,
+    sourcesSupported: typeof api?.sources === "function"
+  };
+}
+
+/**
+ * Le moteur livre-t-il lui-même une règle pour cet identifiant (hors tables enregistrées) ? `api.content.builtin` (§277) ; un moteur
+ * plus ancien : le contenu en vigueur que nulle table n'a apporté.
+ */
+export function builtinIds() {
+  const api = content();
+  if ( api?.builtin ) return id => !!api.builtin[id];
+  const fromTables = new Set(Object.values(api?.registered?.() ?? {}).flat());
+  return id => !!api?.shipped?.[id] && !fromTables.has(id);
 }
 
 /**
@@ -51,4 +92,10 @@ export function register(source, table) {
 export function contentApplies() {
   const api = game.modules.get(ENGINE_ID)?.api;
   return typeof api?.levelAtLeast === "function" ? api.levelAtLeast("full") : true;
+}
+
+/** `api.settings.registerWindow` du moteur (≥ 0.241.0), ou null. */
+export function settingsWindow() {
+  const fn = game.modules.get(ENGINE_ID)?.api?.settings?.registerWindow;
+  return typeof fn === "function" ? fn : null;
 }

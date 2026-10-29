@@ -7,8 +7,10 @@
 import { MODULE_ID, loc } from "./shared.mjs";
 import { registerSettings, readStore } from "./adapter/store.mjs";
 import { install, homebrewPack } from "./adapter/compendium.mjs";
-import { registerRegistry, refresh, currentTable } from "./runtime/registry.mjs";
+import { registerRegistry, refresh, currentTable, packProblems } from "./runtime/registry.mjs";
 import { Creator } from "./apps/creator.mjs";
+import { PacksManager, warnPackProblems } from "./apps/packs.mjs";
+import * as packs from "./runtime/packs.mjs";
 import * as engine from "./adapter/engine.mjs";
 import * as workshop from "./runtime/workshop.mjs";
 
@@ -23,11 +25,34 @@ Hooks.once("init", () => {
   registerRegistry();
 });
 
+// La fenêtre de réglages DAS (moteur ≥ 0.241.0, `api.settings.registerWindow`) : un onglet d'outils pour le MJ — les packs
+// d'automatisation et le créateur. Avec un moteur plus ancien, le bouton du répertoire des items reste le seul accès.
+Hooks.once("setup", () => {
+  const register = engine.settingsWindow();
+  if ( !register ) return;
+  try {
+    register({
+      namespace: MODULE_ID, title: "DHB.Reglages.Titre",
+      menu: { name: "DHB.Reglages.Menu.Nom", label: "DHB.Reglages.Menu.Bouton", hint: "DHB.Reglages.Menu.Aide", icon: "fa-solid fa-flask" },
+      tabs: [{ id: "workshop", icon: "fa-solid fa-flask", label: "DHB.Reglages.Onglet", keys: [], tools: [
+        { id: "packs", icon: "fa-solid fa-box-open", name: "DHB.Reglages.Paquets.Nom", hint: "DHB.Reglages.Paquets.Aide",
+          button: "DHB.Reglages.Paquets.Bouton", open: () => PacksManager.open() },
+        { id: "creator", icon: "fa-solid fa-flask", name: "DHB.Reglages.Createur.Nom", hint: "DHB.Reglages.Createur.Aide",
+          button: "DHB.Reglages.Createur.Bouton", open: () => Creator.open() }
+      ] }]
+    });
+  }
+  catch(err) { console.error(err); }
+});
+
 Hooks.once("ready", () => {
   install();
+  warnPackProblems(packProblems());
   game.modules.get(MODULE_ID).api = Object.freeze({
     /** Ouvre le créateur ; avec un identifiant, rouvre cette création. */
     open: identifier => Creator.open(identifier ?? null),
+    /** Ouvre la fenêtre des packs d'automatisation. */
+    packs: () => PacksManager.open(),
     /** Les créations de ce monde (rangement brut). */
     creations: () => readStore().entries,
     /** La table enregistrée auprès du moteur. */
@@ -62,7 +87,38 @@ Hooks.once("ready", () => {
       /** Le texte de toutes les fenêtres du créateur ouvertes. */
       fenetres: () => Array.from(foundry.applications.instances.values()).filter(a => a instanceof Creator)
         .map(a => ({ id: a.id, step: a.draft?.step, texte: a.element?.innerText })),
-      fermer: () => Promise.all(Array.from(foundry.applications.instances.values()).filter(a => a instanceof Creator).map(a => a.close()))
+      fermer: () => Promise.all(Array.from(foundry.applications.instances.values()).filter(a => (a instanceof Creator) || (a instanceof PacksManager)).map(a => a.close())),
+      // --- Packs (SPEC §8.5) : `json` est le texte du fichier (ou l'objet). -----------------------------------------------------
+      /** Le résumé que le MJ verrait avant d'accepter. */
+      paquetApercu: ({ json }) => packs.previewPack(json),
+      /** Importe (ou met à jour) un pack : refusé s'il a une erreur. */
+      paquetImporter: async ({ json }) => {
+        const r = await packs.importPack(json);
+        return { imported: r.imported, items: r.items, summary: r.summary };
+      },
+      /** Les packs importés et leur état ; `registered` : ce que le moteur a reçu sous leur source. */
+      paquets: () => packs.listPacks(),
+      paquetActiver: ({ id, enabled=true }) => packs.setPackEnabled(id, enabled),
+      paquetRetirer: ({ id, deleteItems=false }) => packs.removePack(id, { deleteItems }),
+      /** Le fichier d'un pack importé : `{ name, text }`. */
+      paquetExporter: ({ id }) => packs.exportImportedPack(id),
+      /** Un pack tiré de créations : `{ name, text, skipped }`. */
+      exporterCreations: async args => {
+        const { name, text, skipped } = await packs.exportCreations(args ?? {});
+        return { name, text, skipped };
+      },
+      /** Les sources que le moteur a reçues, et l'identifiant sous lequel il reconnaît un item (uuid). */
+      sources: async ({ uuid }={}) => ({
+        registered: engine.content()?.sources?.() ?? null,
+        identifier: uuid ? engine.content()?.identifierOf?.(await fromUuid(uuid)) ?? null : null
+      }),
+      /** Ouvre la fenêtre des packs (avec un fichier : son résumé) et rend son texte. */
+      paquetFenetre: async ({ json=null }={}) => {
+        const app = await PacksManager.open();
+        const win = foundry.applications.instances.get(`${MODULE_ID}-packs`) ?? app;
+        if ( json ) await win.preview(json);
+        return { texte: win?.element?.innerText ?? null };
+      }
     })
   });
 });
@@ -88,5 +144,10 @@ Hooks.on("renderItemDirectory", (app, html) => {
   button.className = "dhb-open";
   button.innerHTML = `<i class="fa-solid fa-flask"></i> ${loc("Repertoire.Creer")}`;
   button.addEventListener("click", () => Creator.open());
-  actions.append(button);
+  const packsButton = document.createElement("button");
+  packsButton.type = "button";
+  packsButton.className = "dhb-packs-open";
+  packsButton.innerHTML = `<i class="fa-solid fa-box-open"></i> ${loc("Repertoire.Paquets")}`;
+  packsButton.addEventListener("click", () => PacksManager.open());
+  actions.append(button, packsButton);
 });

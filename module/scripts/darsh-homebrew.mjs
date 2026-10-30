@@ -33,6 +33,8 @@ Hooks.once("setup", () => {
   try {
     register({
       namespace: MODULE_ID, title: "DHB.Reglages.Titre",
+      // Moteur ≥ §291 : l'atelier ferme la rangée des modules, à droite, ses outils en grandes cartes (ignoré par un moteur plus ancien).
+      tab: { end: true, kind: "workshop", icon: "fa-solid fa-flask" },
       menu: { name: "DHB.Reglages.Menu.Nom", label: "DHB.Reglages.Menu.Bouton", hint: "DHB.Reglages.Menu.Aide", icon: "fa-solid fa-flask" },
       tabs: [{ id: "workshop", icon: "fa-solid fa-flask", label: "DHB.Reglages.Onglet", keys: [], tools: [
         { id: "packs", icon: "fa-solid fa-box-open", name: "DHB.Reglages.Paquets.Nom", hint: "DHB.Reglages.Paquets.Aide",

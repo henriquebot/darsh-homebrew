@@ -46,7 +46,7 @@
   "DHB.Etat.Conditions": "Condições",
   "DHB.Fiche.Automatisation": "Automação (Homebrew)",
   "DHB.Identite.DejaAutomatise": "\"{id}\" já é automatizado pelo sistema ou por outro módulo: marque a opção para substituí-lo neste mundo.",
-  "DHB.Identite.DejaCree": "Já existe uma criação com o identificador \"{id}\".",
+  "DHB.Identite.DejaCree": "Já existe uma criação com o identificador \"{id}\". Para reutilizar esse nome, exclua-a primeiro (oficina, etapa Automação).",
   "DHB.Identite.Identifiant": "Identificador",
   "DHB.Identite.IdentifiantAide": "É assim que o sistema reconhece o item em qualquer ficha que o contenha. Use letras minúsculas, números e hífens.",
   "DHB.Identite.IdentifiantFaux": "O identificador deve conter apenas letras minúsculas, números e hífens.",
@@ -179,5 +179,17 @@
   "DHB.Reglages.Paquets.Bouton": "Gerenciar pacotes",
   "DHB.Reglages.Createur.Nom": "Criador de itens",
   "DHB.Reglages.Createur.Aide": "Crie uma magia, característica ou item automatizado, passo a passo.",
-  "DHB.Reglages.Createur.Bouton": "Criar"
+  "DHB.Reglages.Createur.Bouton": "Criar",
+  "DHB.Identite.Orphelin": "O item da criação anterior \"{name}\" não existe mais: ela será substituída por esta.",
+  "DHB.Nettoyage.Supprimee": "DAS · Homebrew: {n} criação(ões) removida(s) junto com seu item ({names}).",
+  "DHB.Nettoyage.Orphelins": "DAS · Homebrew: {n} criação(ões) órfã(s) removida(s), pois seu item não existe mais ({names}).",
+  "DHB.Nettoyage.PackAbsent": "DAS · Homebrew: não foi possível encontrar o compêndio de {n} criação(ões) ({names}). Suas regras são mantidas enquanto ele estiver ausente.",
+  "DHB.Supprimer.Bouton": "Excluir esta criação",
+  "DHB.Supprimer.Titre": "Excluir \"{name}\"",
+  "DHB.Supprimer.Confirmer": "Excluir a criação \"{name}\"? Suas regras de automação serão removidas e seu identificador ficará livre novamente.",
+  "DHB.Supprimer.Copies": "As cópias já colocadas em fichas permanecem, sem automação.",
+  "DHB.Supprimer.Objet": "Excluir também o item do compêndio Homebrew",
+  "DHB.Supprimer.Annuler": "Cancelar",
+  "DHB.Supprimer.Fait": "Criação \"{name}\" excluída; seu item permanece no compêndio.",
+  "DHB.Supprimer.FaitObjet": "Criação \"{name}\" e seu item excluídos."
 }
